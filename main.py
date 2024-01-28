@@ -3,6 +3,7 @@ import os
 from urllib import request
 import flet as ft
 from dotenv import load_dotenv
+from webbrowser import open
 
 load_dotenv(".env")
 
