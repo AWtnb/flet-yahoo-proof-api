@@ -7,6 +7,30 @@ from dotenv import load_dotenv
 load_dotenv(".env")
 
 
+class Suggest:
+    def __init__(self, suggest: dict) -> None:
+        self.target = suggest["word"]
+        self.fix_suggestion = suggest["suggestion"]
+        self.rule = suggest["rule"]
+        self.note = suggest["note"]
+        self.offset = int(suggest["offset"])
+        self.length = int(suggest["length"])
+
+    def get_context(self, raw_contents: str):
+        word_start = self.offset
+        word_end = self.offset + self.length
+        context_start = max(word_start - 10, 0)
+        context_end = min(word_end + 10, len(raw_contents))
+        context = (
+            raw_contents[context_start:word_start]
+            + "▶"
+            + raw_contents[word_start:word_end]
+            + "◀"
+            + raw_contents[word_end:context_end]
+        )
+        return context.replace("\r", "").replace("\n", "").replace("\t", "")
+
+
 def post_to_yahoo(query):
     headers = {
         "Content-Type": "application/json",
@@ -37,8 +61,7 @@ def main(page: ft.Page):
     copy_button = ft.Ref[ft.ElevatedButton]()
 
     COLUMNS = [
-        "位置（先頭を0として何文字目か）",
-        "問題の箇所",
+        "問題の箇所（改行等無視）",
         "修正提案",
         "指摘理由",
         "備考",
@@ -52,20 +75,16 @@ def main(page: ft.Page):
     def update_result_table(suggests):
         result_table.current.columns = [ft.DataColumn(ft.Text(c)) for c in COLUMNS]
         table_rows = []
-        for su in suggests:
-            offset = su["offset"]
-            target = su["word"]
-            fix_suggestion = su["suggestion"]
-            rule = su["rule"]
-            note = su["note"]
+        for suggest in suggests:
+            su = Suggest(suggest)
+            context = su.get_context(pasted_str.current.value)
             table_rows.append(
                 ft.DataRow(
                     cells=[
-                        ft.DataCell(ft.Text(offset)),
-                        ft.DataCell(ft.Text(target)),
-                        ft.DataCell(ft.Text(fix_suggestion)),
-                        ft.DataCell(ft.Text(rule)),
-                        ft.DataCell(ft.Text(note)),
+                        ft.DataCell(ft.Text(context)),
+                        ft.DataCell(ft.Text(su.fix_suggestion)),
+                        ft.DataCell(ft.Text(su.rule)),
+                        ft.DataCell(ft.Text(su.note)),
                     ]
                 )
             )
@@ -119,16 +138,16 @@ def main(page: ft.Page):
         ft.Row(
             controls=[
                 ft.Container(
-                    content=ft.Text(
-                        "YOMI", size=40, weight=ft.FontWeight.BOLD, italic=True
-                    ),
+                    content=ft.Text("校正支援ツール", size=20, weight=ft.FontWeight.BOLD),
                     alignment=ft.alignment.top_left,
                 ),
                 ft.Container(
                     content=ft.IconButton(
                         icon=ft.icons.SOURCE_OUTLINED,
                         icon_color=ft.colors.BLUE_400,
-                        on_click=lambda _: open("https://github.com/AWtnb/〓〓"),
+                        on_click=lambda _: open(
+                            "https://github.com/AWtnb/flet-yahoo-proof-api"
+                        ),
                     ),
                     alignment=ft.alignment.top_right,
                 ),
@@ -147,7 +166,7 @@ def main(page: ft.Page):
         ft.Divider(),
         ft.Text(ref=ok_message, visible=False, value=""),
         ft.FilledButton(ref=copy_button, on_click=copy_table, visible=False),
-        ft.ListView(controls=[ft.DataTable(ref=result_table)], height=400),
+        ft.ListView(controls=[ft.DataTable(ref=result_table)], height=250),
     ]
 
     page.add(ft.Column(controls=ui_cols))
