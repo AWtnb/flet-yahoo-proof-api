@@ -17,7 +17,6 @@
     ```
     pip install flet
     pip install python-dotenv
-    pip install python-dotenv
     ```
 
 1. 下記コマンドを実行すると、`dist`ディレクトリ内に`yahoo-proof.exe`がビルドされる
