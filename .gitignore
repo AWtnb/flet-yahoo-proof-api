@@ -1,0 +1,7 @@
+build/
+dist/
+assets/*
+!assets/.gitkeep
+*.exe
+*.spec
+.env
