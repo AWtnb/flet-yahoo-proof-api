@@ -24,3 +24,9 @@
     ```
     flet pack main.py --name yahoo-proof
     ```
+
+
+---
+クレジット：
+
+Webサービス by Yahoo! JAPAN （https://developer.yahoo.co.jp/sitemap/）
